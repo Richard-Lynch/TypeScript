@@ -115,6 +115,7 @@
         "codefixes/convertConstToLet.ts",
         "codefixes/fixExpectedComma.ts",
         "codefixes/fixAddVoidToPromise.ts",
+        "codefixes/fixImportNonExportedMember.ts",
         "refactors/convertExport.ts",
         "refactors/convertImport.ts",
         "refactors/convertToOptionalChainExpression.ts",
@@ -134,6 +135,6 @@
         "transform.ts",
         "shims.ts",
         "globalThisShim.ts",
-        "exportAsModule.ts"
+        "exportAsModule.ts",
     ]
 }
