@@ -131,7 +131,7 @@ namespace ts.codefix {
     const isVariableDeclarationListWith1Element = (
         node: Node
     ): node is VariableDeclarationList =>
-        !(isVariableDeclarationList(node) && node.declarations.length !== 1);
+        isVariableDeclarationList(node) && node.declarations.length === 1;
 
     function doChange(
         changes: textChanges.ChangeTracker,
@@ -148,17 +148,9 @@ namespace ts.codefix {
             return;
         }
 
-        // Node we need to export is a function
-        if (isFunctionSymbol(localSymbol)) {
+        // Node we need to export is a function, class, or variable declaration
+        if (localSymbol.valueDeclaration!== undefined && (isDeclarationStatement(localSymbol.valueDeclaration) || isVariableStatement(localSymbol.valueDeclaration))) {
             const node = localSymbol.valueDeclaration;
-
-            if (node === undefined) {
-                return;
-            }
-
-            if (!isDeclarationStatement(node) && !isVariableStatement(node)) {
-                return;
-            }
 
             return changes.insertExportModifier(sourceFile, node);
         }
@@ -179,7 +171,9 @@ namespace ts.codefix {
 
         // If there is an existing export
         if (
-            namedExportDeclaration?.exportClause &&
+            namedExportDeclaration &&
+            !namedExportDeclaration.isTypeOnly &&
+            namedExportDeclaration.exportClause &&
             isNamedExports(namedExportDeclaration.exportClause)
         ) {
             return changes.replaceNode(
