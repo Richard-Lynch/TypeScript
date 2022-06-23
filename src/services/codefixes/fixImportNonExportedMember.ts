@@ -104,7 +104,9 @@ namespace ts.codefix {
             if (
                 isExportDeclaration(statement) &&
                 statement.exportClause &&
-                isNamedExports(statement.exportClause)
+                isNamedExports(statement.exportClause) &&
+                !statement.isTypeOnly &&
+                statement.moduleSpecifier === undefined
             ) {
                 namedExport = statement;
             }
@@ -149,7 +151,11 @@ namespace ts.codefix {
         }
 
         // Node we need to export is a function, class, or variable declaration
-        if (localSymbol.valueDeclaration!== undefined && (isDeclarationStatement(localSymbol.valueDeclaration) || isVariableStatement(localSymbol.valueDeclaration))) {
+        if (
+            localSymbol.valueDeclaration !== undefined &&
+            (isDeclarationStatement(localSymbol.valueDeclaration) ||
+                isVariableStatement(localSymbol.valueDeclaration))
+        ) {
             const node = localSymbol.valueDeclaration;
 
             return changes.insertExportModifier(sourceFile, node);
@@ -173,6 +179,7 @@ namespace ts.codefix {
         if (
             namedExportDeclaration &&
             !namedExportDeclaration.isTypeOnly &&
+            !namedExportDeclaration.moduleSpecifier === undefined &&
             namedExportDeclaration.exportClause &&
             isNamedExports(namedExportDeclaration.exportClause)
         ) {
