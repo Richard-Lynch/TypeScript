@@ -6,4 +6,5 @@
 // @Filename: /a.ts
 ////import { a } from "foo";
 
+// Won't apply fix if `module.exports` is used
 verify.not.codeFixAvailable();

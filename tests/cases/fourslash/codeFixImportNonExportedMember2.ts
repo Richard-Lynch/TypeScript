@@ -21,6 +21,18 @@ verify.codeFixAvailable([
   { description: `Remove import from './a'` },
   { description: `Remove import from './b'` },
 ]);
+
+// Can fix a single variable
+verify.codeFix({
+  index: 1,
+  description: `Export 'd' from module './b'`,
+  newFileContent: {
+    "/b.ts": `export let d = 4;
+export function whatever2() {
+}`,
+  },
+});
+// Can fix a variable in a list (adds a named export)
 verify.codeFix({
   index: 0,
   description: `Export 'a' from module './a'`,
@@ -31,15 +43,5 @@ export function whatever() {
 
 export { a };
 `,
-  },
-});
-
-verify.codeFix({
-  index: 1,
-  description: `Export 'd' from module './b'`,
-  newFileContent: {
-    "/b.ts": `export let d = 4;
-export function whatever2() {
-}`,
   },
 });

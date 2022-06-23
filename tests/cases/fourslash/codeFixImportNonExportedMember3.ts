@@ -14,6 +14,7 @@ verify.codeFixAvailable([
   { description: `Export 'a' from module './a'` },
   { description: `Remove import from './a'` },
 ]);
+// Can export from list using an existing export
 verify.codeFix({
   index: 0,
   description: `Export 'a' from module './a'`,
