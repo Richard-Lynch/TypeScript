@@ -95,37 +95,13 @@ namespace ts.codefix {
         return { node, importDecl, originSourceFile };
     }
 
-    function getNamedExportDeclaration(
-        sourceFile: SourceFile
-    ): ExportDeclaration | undefined {
-        let namedExport;
-
-        for (const statement of sourceFile.statements) {
-            if (
-                isExportDeclaration(statement) &&
-                statement.exportClause &&
-                isNamedExports(statement.exportClause) &&
-                !statement.isTypeOnly &&
-                statement.moduleSpecifier === undefined
-            ) {
-                namedExport = statement;
-            }
-        }
-
-        return namedExport;
-    }
-
-    function compareIdentifiers(s1: Identifier, s2: Identifier) {
-        return compareStringsCaseInsensitive(s1.text, s2.text);
-    }
-
     function sortSpecifiers(
         specifiers: ExportSpecifier[]
     ): readonly ExportSpecifier[] {
         return stableSort(specifiers, (s1, s2) =>
-            compareIdentifiers(
-                s1.propertyName || s1.name,
-                s2.propertyName || s2.name
+            compareStringsCaseInsensitive(
+                (s1.propertyName || s1.name).text,
+                (s2.propertyName || s2.name).text
             )
         );
     }
@@ -150,7 +126,7 @@ namespace ts.codefix {
             return;
         }
 
-        // Node we need to export is a function, class, or variable declaration
+        // Node we need to export is a function, class, or variable declaration which can have `export` prepended
         if (
             localSymbol.valueDeclaration !== undefined &&
             (isDeclarationStatement(localSymbol.valueDeclaration) ||
@@ -160,7 +136,6 @@ namespace ts.codefix {
 
             return changes.insertExportModifier(sourceFile, node);
         }
-        // Node we need to export is a variable declaration
         else if (
             localSymbol.valueDeclaration &&
             isVariableDeclarationListWith1Element(
@@ -172,59 +147,58 @@ namespace ts.codefix {
             return changes.insertExportModifier(sourceFile, node);
         }
 
-        // In all other cases => the node is a variable, and should be exported via `export {a}`
-        const namedExportDeclaration = getNamedExportDeclaration(sourceFile);
-
-        // If there is an existing export
-        if (
-            namedExportDeclaration &&
-            !namedExportDeclaration.isTypeOnly &&
-            !namedExportDeclaration.moduleSpecifier === undefined &&
-            namedExportDeclaration.exportClause &&
-            isNamedExports(namedExportDeclaration.exportClause)
-        ) {
-            return changes.replaceNode(
-                sourceFile,
-                namedExportDeclaration,
-                factory.updateExportDeclaration(
-                    /*node*/ namedExportDeclaration,
-                    /*modifiers*/ undefined,
-                    /*isTypeOnly*/ false,
-                    /*exportClause*/ factory.updateNamedExports(
-                        /*node*/ namedExportDeclaration.exportClause,
-                        /*elements*/ sortSpecifiers(
-                            namedExportDeclaration.exportClause.elements.concat(
-                                factory.createExportSpecifier(
-                                    /*isTypeOnly*/ false,
-                                    /*propertyName*/ undefined,
-                                    node
+        // In all other cases the node should be exported via `export {a}`
+        // Search for an export statement we can use
+        for (const namedExportDeclaration of sourceFile.statements) {
+            if (
+                isExportDeclaration(namedExportDeclaration) &&
+                namedExportDeclaration.exportClause &&
+                isNamedExports(namedExportDeclaration.exportClause) &&
+                !namedExportDeclaration.isTypeOnly && // don't use `export type {...}`
+                namedExportDeclaration.moduleSpecifier === undefined // don't use `export {...} from`
+            ) {
+                return changes.replaceNode(
+                    sourceFile,
+                    namedExportDeclaration,
+                    factory.updateExportDeclaration(
+                        namedExportDeclaration,
+                        /*modifiers*/ undefined,
+                        /*isTypeOnly*/ false,
+                        /*exportClause*/ factory.updateNamedExports(
+                            namedExportDeclaration.exportClause,
+                            /*elements*/ sortSpecifiers(
+                                namedExportDeclaration.exportClause.elements.concat(
+                                    factory.createExportSpecifier(
+                                        /*isTypeOnly*/ false,
+                                        /*propertyName*/ undefined,
+                                        node
+                                    )
                                 )
                             )
-                        )
-                    ),
-                    /*moduleSpecifier*/ undefined,
-                    /*assertClause*/ undefined
-                )
-            );
-        }
-        // There is no existing export
-        else {
-            return changes.insertNodeAtEndOfScope(
-                sourceFile,
-                sourceFile,
-                factory.createExportDeclaration(
-                    /*modifiers*/ undefined,
-                    /*isTypeOnly*/ false,
-                    /*exportClause*/ factory.createNamedExports([
-                        factory.createExportSpecifier(
-                            /*isTypeOnly*/ false,
-                            /*propertyName*/ undefined,
-                            node
                         ),
-                    ]),
-                    /*moduleSpecifier*/ undefined
-                )
-            );
+                        /*moduleSpecifier*/ undefined,
+                        /*assertClause*/ undefined
+                    )
+                );
+            }
         }
+
+        // If we won't find an existing `export` statement we can use, create one
+        return changes.insertNodeAtEndOfScope(
+            sourceFile,
+            sourceFile,
+            factory.createExportDeclaration(
+                /*modifiers*/ undefined,
+                /*isTypeOnly*/ false,
+                /*exportClause*/ factory.createNamedExports([
+                    factory.createExportSpecifier(
+                        /*isTypeOnly*/ false,
+                        /*propertyName*/ undefined,
+                        node
+                    ),
+                ]),
+                /*moduleSpecifier*/ undefined
+            )
+        );
     }
 }
