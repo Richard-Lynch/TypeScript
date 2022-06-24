@@ -32,7 +32,7 @@ namespace ts.codefix {
                         showModuleSpecifier(info.importDecl),
                     ],
                     fixId,
-                    /*fixAllDescription*/ Diagnostics.Add_all_missing_exports
+                    /*fixAllDescription*/ Diagnostics.Export_all_missing_members_from_modules
                 ),
             ];
         },

@@ -6602,7 +6602,7 @@
         "category": "Message",
         "code": 90059
     },
-    "Add all missing exports": {
+    "Export all missing members from modules": {
         "category": "Message",
         "code": 90060
     },
