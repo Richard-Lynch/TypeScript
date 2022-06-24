@@ -12,7 +12,8 @@
 goTo.file("/b.ts");
 verify.codeFixAll({
   fixId: "importNonExportedMember",
-  fixAllDescription: ts.Diagnostics.Add_all_missing_exports.message,
+  fixAllDescription:
+    ts.Diagnostics.Export_all_missing_members_from_modules.message,
   newFileContent: {
     "/a.ts": `export declare function foo(): any;
 export declare function bar(): any;
